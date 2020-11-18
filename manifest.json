@@ -1,7 +1,7 @@
 {
 	"name": "sprite",
     "activities": [
-		{"name": "Piskel Editor", "url": "piskel", "edits": ["PISKEL"]},
+		{"name": "Piskel Editor", "url": "editor", "edits": ["PISKEL"]},
 		{"name": "Embedded Piskel Viewer", "url": "piskel-embed.js", "className": "OMGEmbeddedViewerPISKEL", "embeds": ["PISKEL"]}
 	]
 }
