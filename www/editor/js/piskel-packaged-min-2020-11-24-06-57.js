@@ -14195,6 +14195,10 @@ if (!Uint32Array.prototype.fill) {
         url = "/data"
       }
 
+      var saveData = JSON.parse(data.framesheet).piskel
+      saveData.type = "PISKEL"
+      saveData.framesheet_as_png = data.framesheet_as_png
+
       var xhr = ns.Xhr.xhr_(url, 'POST', success, error);
       /*var formData = new FormData();
 
@@ -14211,7 +14215,7 @@ if (!Uint32Array.prototype.fill) {
       //MGH omg server expects this instead of FormData
       data.type = "PISKEL"
       xhr.setRequestHeader("Content-type", "application/json");
-      xhr.send(JSON.stringify(data));
+      xhr.send(JSON.stringify(saveData));
     },
 
     xhr_ : function (url, method, success, error) {

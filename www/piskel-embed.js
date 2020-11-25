@@ -2,19 +2,19 @@ function OMGEmbeddedViewerPISKEL(viewer) {
     this.data = viewer.data
     this.embedDiv = viewer.embedDiv
 
-    var framesheet = JSON.parse(this.data.framesheet).piskel
-console.log(framesheet)
+    
     var canvas = document.createElement("canvas")
-    canvas.width = framesheet.width
+    /*canvas.width = framesheet.width
     canvas.height = framesheet.height
     canvas.style.width = Math.max(64, canvas.width) + "px"
     canvas.style.height = Math.max(64, canvas.height) + "px"
-    
+    */
     this.embedDiv.appendChild(canvas)
 
     
     var img = document.createElement("img")
-    img.src = this.data.first_frame_as_png
+    //img.src = this.data.first_frame_as_png
+    img.src = this.data.framesheet_as_png
     img.onload = e => {
         canvas.getContext("2d").drawImage(img, 0, 0)
     }
