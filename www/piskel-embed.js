@@ -18,6 +18,7 @@ function OMGEmbeddedViewerPISKEL(viewer) {
         var i = 0
         var handle = setInterval(() => {
             try {
+                canvas.width = canvas.width
                 canvas.getContext("2d").drawImage(img, i * canvas.width, 0, canvas.width, canvas.height,
                                                     0, 0, canvas.width, canvas.height)
                 i = (i + 1) % (img.width / canvas.width)
