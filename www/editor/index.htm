@@ -64,7 +64,7 @@
 </style>
 <div class="fake-piskelapp-header">
   <a
-    href="index.html"
+    href="index.htm"
     target="_blank"
     class="new-piskel-desktop button button-primary"
     title="Create a new sprite"
@@ -1451,9 +1451,9 @@
     (function () {
 
   /**
-   * See @Gruntfile.js => after build, -2020-11-24-06-57 is replaced by the build version
+   * See @Gruntfile.js => after build, -2020-11-25-12-21 is replaced by the build version
    */
-  var version = '-2020-11-24-06-57';
+  var version = '-2020-11-25-12-21';
   var versionHasNotBeenReplaced = version.indexOf('@@') === 0;
   if (versionHasNotBeenReplaced)  {
     version = '';
@@ -1464,18 +1464,41 @@
   }
 
   window._onPiskelReady = function () {
-    var id
-    var index = window.location.search.indexOf("id=")
-    if (index === -1) {
+
+    var params = {}
+    window.location.search.substr(1).split("&").forEach(param => {
+      var kvp = param.split("=")
+      params[kvp[0]] = kvp[1]  
+    })
+
+    var url 
+    if (params.id) {
+      url = "/data/" + params.id
+    }
+    else if (params.edit) {
+      url = decodeURIComponent(params.edit)
+    }
+
+    if (!window.pskl.appEnginePiskelData_) {
+      window.pskl.appEnginePiskelData_ = {}
+    }
+    window.pskl.appEnginePiskelData_.omg = {
+      update_id: params.update_id,
+      sheet: params.sheet
+    }
+
+    if (window.pskl.appEnginePiskelData_.omg.update_id) {
+      fetch("/data/" + window.pskl.appEnginePiskelData_.omg.update_id)
+      .then(res => res.json()).then(data => {
+        window.pskl.appEnginePiskelData_.omg.updateThing = data
+      })
+    }
+
+    if (!url) {
       window._onPiskelReady2()
     }
     else {
-      id = window.location.search.substr(index + 3)
-      id = id.split("&")[0]
-      fetch("/data/" + id).then(res => res.json()).then(data => {
-        if (!window.pskl.appEnginePiskelData_) {
-          window.pskl.appEnginePiskelData_ = {}
-        }
+      fetch(url).then(res => res.json()).then(data => {
         console.log(data)
         window.pskl.appEnginePiskelData_.piskel = {modelVersion: 2, piskel: data}
         window._onPiskelReady2()

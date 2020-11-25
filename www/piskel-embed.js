@@ -2,13 +2,12 @@ function OMGEmbeddedViewerPISKEL(viewer) {
     this.data = viewer.data
     this.embedDiv = viewer.embedDiv
 
-    
     var canvas = document.createElement("canvas")
-    /*canvas.width = framesheet.width
-    canvas.height = framesheet.height
+    canvas.width = this.data.width
+    canvas.height = this.data.height
     canvas.style.width = Math.max(64, canvas.width) + "px"
     canvas.style.height = Math.max(64, canvas.height) + "px"
-    */
+    
     this.embedDiv.appendChild(canvas)
 
     
@@ -16,8 +15,20 @@ function OMGEmbeddedViewerPISKEL(viewer) {
     //img.src = this.data.first_frame_as_png
     img.src = this.data.framesheet_as_png
     img.onload = e => {
-        canvas.getContext("2d").drawImage(img, 0, 0)
+        var i = 0
+        var handle = setInterval(() => {
+            try {
+                canvas.getContext("2d").drawImage(img, i * canvas.width, 0, canvas.width, canvas.height,
+                                                    0, 0, canvas.width, canvas.height)
+                i = (i + 1) % (img.width / canvas.width)
+            }
+            catch (e) {
+                console.error(e)
+                clearInterval(handle)
+            }
+        }, 1000 / this.data.fps)
     }
+
 }
 /*
 

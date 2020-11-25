@@ -25979,6 +25979,7 @@ return Q;
     this.columnsInput = document.querySelector('#png-export-columns');
 
     var downloadButton = document.querySelector('.png-download-button');
+    var downloadButtonOMG = document.querySelector('.png-download-button-omg');
     var downloadPixiButton = document.querySelector('.png-pixi-download-button');
     var dataUriButton = document.querySelector('.datauri-open-button');
     var selectedFrameDownloadButton = document.querySelector('.selected-frame-download-button');
@@ -25990,6 +25991,7 @@ return Q;
 
     this.addEventListener(this.columnsInput, 'input', this.onColumnsInput_);
     this.addEventListener(downloadButton, 'click', this.onDownloadClick_);
+    this.addEventListener(downloadButtonOMG, 'click', this.onDownloadOMGClick_);
     this.addEventListener(downloadPixiButton, 'click', this.onPixiDownloadClick_);
     this.addEventListener(dataUriButton, 'click', this.onDataUriClick_);
     this.addEventListener(selectedFrameDownloadButton, 'click', this.onDownloadSelectedFrameClick_);
@@ -26100,6 +26102,40 @@ return Q;
     // Create PNG export.
     var canvas = this.createPngSpritesheet_();
     this.downloadCanvas_(canvas);
+  };
+
+  ns.PngExportController.prototype.onDownloadOMGClick_ = function (evt) {
+
+    var thing = window.pskl.appEnginePiskelData_.omg.updateThing
+
+    if (!thing) {
+      console.error("no update thing") //todo show a message
+      return
+    }
+
+    // Create PNG export.
+    var canvas = this.createPngSpritesheet_();
+    //this.downloadCanvas_(canvas);
+
+    var dataURL = canvas.toDataURL('image/png')
+    var sheet = window.pskl.appEnginePiskelData_.omg.sheet
+
+    if (typeof thing.sheets[sheet] === "object") {
+      thing.sheets[sheet].url = dataURL
+
+      fetch("/data", { 
+        method: "POST", 
+        body: JSON.stringify(thing), 
+        headers: { 
+          "Content-type": "application/json; charset=UTF-8"
+        } 
+      }) 
+      .then(response => response.json()) 
+      .then(json => console.log(json)); 
+    }
+    else {
+      console.error("didn't save png, no sheet")
+    }
   };
 
   // Used and overridden in casper integration tests.
