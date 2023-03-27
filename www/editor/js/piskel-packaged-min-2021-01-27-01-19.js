@@ -14193,6 +14193,20 @@ if (!Uint32Array.prototype.fill) {
 
       if (url === "save") {
         url = "/data"
+
+        /*if (data.id) {
+          if (omg.user) {
+            if (data.user_id !== omg.user.id) {
+              delete data.id
+            }
+            else {
+
+            }
+          }
+          else {
+            delete data.id
+          }
+        }*/
       }
 
       var saveData = JSON.parse(data.framesheet).piskel
@@ -14200,19 +14214,7 @@ if (!Uint32Array.prototype.fill) {
       saveData.framesheet_as_png = data.framesheet_as_png
 
       var xhr = ns.Xhr.xhr_(url, 'POST', success, error);
-      /*var formData = new FormData();
-
-      if (typeof data == 'object') {
-        for (var key in data) {
-          if (data.hasOwnProperty(key)) {
-            formData.append(key, data[key]);
-          }
-        }
-      }
-
-      xhr.send(formData);*/
-
-      //MGH omg server expects this instead of FormData
+      
       data.type = "PISKEL"
       xhr.setRequestHeader("Content-type", "application/json");
       xhr.send(JSON.stringify(saveData));
@@ -25984,6 +25986,13 @@ return Q;
     var dataUriButton = document.querySelector('.datauri-open-button');
     var selectedFrameDownloadButton = document.querySelector('.selected-frame-download-button');
 
+    if (!window.pskl.appEnginePiskelData_.omg.updateThing) {
+      downloadButtonOMG.style.display = "none"
+    }
+    else {
+      downloadButton.style.display = "none"
+    }
+
     this.pixiInlineImageCheckbox = document.querySelector('.png-pixi-inline-image-checkbox');
 
     this.initLayoutSection_();
@@ -26107,9 +26116,13 @@ return Q;
   ns.PngExportController.prototype.onDownloadOMGClick_ = function (evt) {
 
     var thing = window.pskl.appEnginePiskelData_.omg.updateThing
+    var sheet = window.pskl.appEnginePiskelData_.omg.sheet
 
-    if (!thing) {
-      console.error("no update thing") //todo show a message
+    if (!thing || typeof thing.sheets[sheet] !== "object") {
+      $.publish(Events.SHOW_NOTIFICATION, [{
+        content : 'OMG Thing or sheets is missing. Not saved!',
+        hideDelay : 3000
+      }]);
       return
     }
 
@@ -26118,24 +26131,31 @@ return Q;
     //this.downloadCanvas_(canvas);
 
     var dataURL = canvas.toDataURL('image/png')
-    var sheet = window.pskl.appEnginePiskelData_.omg.sheet
+    
+    thing.sheets[sheet].url = dataURL
 
-    if (typeof thing.sheets[sheet] === "object") {
-      thing.sheets[sheet].url = dataURL
-
-      fetch("/data", { 
-        method: "POST", 
-        body: JSON.stringify(thing), 
-        headers: { 
-          "Content-type": "application/json; charset=UTF-8"
-        } 
-      }) 
-      .then(response => response.json()) 
-      .then(json => console.log(json)); 
-    }
-    else {
-      console.error("didn't save png, no sheet")
-    }
+    fetch("/data", { 
+      method: "POST", 
+      body: JSON.stringify(thing), 
+      headers: { 
+        "Content-type": "application/json; charset=UTF-8"
+      } 
+    }) 
+    .then(response => response.json()) 
+    .then(json => {
+      $.publish(Events.SHOW_NOTIFICATION, [{
+        content : 'Successfully saved !',
+        hideDelay : 3000
+      }]);
+      if (thing.type === "SPRITE") {
+        window.location = "/apps/sprite/sprite-editor.htm?id=" + json.id
+      }
+    }).catch(e => {
+      $.publish(Events.SHOW_NOTIFICATION, [{
+        content : 'ERROR saving',
+        hideDelay : 3000
+      }]);
+    }); 
   };
 
   // Used and overridden in casper integration tests.
@@ -33912,6 +33932,14 @@ ns.ToolsHelper = {
     CLOCKWISE : 'clockwise',
     COUNTERCLOCKWISE : 'counterclockwise',
     rotate : function (frame, direction) {
+
+      pz = 1
+      var canvas = document.createElement("canvas")
+      document.body.appendChild(canvas)
+      canvas.width = frame.getWidth() * pz
+      canvas.height = frame.getHeight() * pz
+      var ctx = canvas.getContext("2d")
+      
       var clone = frame.clone();
       var w = frame.getWidth();
       var h = frame.getHeight();
@@ -33920,34 +33948,53 @@ ns.ToolsHelper = {
       var xDelta = Math.ceil((max - w) / 2);
       var yDelta = Math.ceil((max - h) / 2);
 
+      function toColor(num) {
+        num >>>= 0;
+        var r = num & 0xFF,
+            g = (num & 0xFF00) >>> 8,
+            b = (num & 0xFF0000) >>> 16,
+            a = ( (num & 0xFF000000) >>> 24 ) / 255 ;
+        return "rgba(" + [r, g, b, a].join(",") + ")";
+      }
+
+      ctx.translate(canvas.width / 2, canvas.height / 2)
+
+      ctx.rotate(45 * Math.PI/180)
+      
+    
       frame.forEachPixel(function (color, x, y) {
-        var _x = x;
-        var _y = y;
-
-        // Convert to square coords
-        x = x + xDelta;
-        y = y + yDelta;
-
-        // Perform the rotation
-        var tmpX = x;
-        var tmpY = y;
-        if (direction === ns.TransformUtils.CLOCKWISE) {
-          x = tmpY;
-          y = max - 1 - tmpX;
-        } else if (direction === ns.TransformUtils.COUNTERCLOCKWISE) {
-          y = tmpX;
-          x = max - 1 - tmpY;
-        }
-
-        // Convert the coordinates back to the rectangular grid
-        x = x - xDelta;
-        y = y - yDelta;
+        
         if (clone.containsPixel(x, y)) {
-          frame.setPixel(_x, _y, clone.getPixel(x, y));
+          //var col = '#' + (color&0xffffff).toString(16);
+          var col = toColor(color)
+          //console.log(col, x, y)
+          ctx.fillStyle = col
+          ctx.fillRect((pz*x - canvas.width / 2), (pz*y - canvas.height / 2), pz, pz)
+          //frame.setPixel(_x, _y, clone.getPixel(x, y));
         } else {
-          frame.setPixel(_x, _y, Constants.TRANSPARENT_COLOR);
+          //frame.setPixel(_x, _y, Constants.TRANSPARENT_COLOR);
         }
       });
+
+      //debugger
+
+      ctx.translate(-canvas.width / 2, -canvas.height / 2)
+
+      var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+
+      var i = 0
+      for (var y = 0; y < canvas.height; y++) {
+          for (var x = 0; x < canvas.width; x++) {
+              var r = imgData.data[i++] & 0xFF;
+              var g = imgData.data[i++] & 0xFF;
+              var b = imgData.data[i++] & 0xFF;
+              var a = imgData.data[i++] & 0xFF;
+              var rgb = (r << 24) + (g << 16) + (b << 8) + (a);
+              //console.log(x, y, rgb)
+              frame.setPixel(x, y, rgb);
+              
+          }
+      }
 
       return frame;
     },
